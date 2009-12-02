@@ -1,0 +1,17 @@
+setup.py
+./__init__.py
+./_pysdif.c
+./find_colons.py
+./pysdif.py
+./pysdif_test.py
+./remove_colons.py
+./sdif.h
+./sdif_setup.py
+./sdiftools.py
+./setuphelp.py
+./pysdif.pxd
+./_pysdif.pyx
+./SdifTypes.STYP
+./sdif.h
+./install 
+./_pysdif.c 
