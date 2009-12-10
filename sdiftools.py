@@ -188,4 +188,18 @@ def time_range(sdiffile):
     t1 = sdiffile.time
     return t0, t1
     
+def read_f0(sdiffile):
+    sdiffile = SdifFile(sdiffile)
+    assert sdiffile.signature == "1FQ0"
+    times = []
+    freqs = []
+    for frame in sdiffile:
+        times.append(frame.time)
+        freqs.append(frame.get_matrix_data()[0, 0]) # only one row and one column per frame
+    return times, freqs
+    
+def read_f0_as_bpf(sdiffile):
+    import bpf2
+    times, freqs = read_f0(sdiffile)
+    return bpf2.BpfLinear(times, freqs)
         
