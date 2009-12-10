@@ -123,15 +123,21 @@ download = ''
 descr    = __doc__.split('\n')[1:-1]; del descr[1:3]
 
 classifiers = """
+Development Status :: 2 - Pre-Alpha
+Intended Audience :: Science/Research
 License :: OSI Approved :: BSD License
+Operating System :: MacOS
 Operating System :: POSIX
 Operating System :: Unix
-Operating System :: MacOS
-Intended Audience :: Science/Research
 Programming Language :: C
 Programming Language :: Cython
 Programming Language :: Python
 Programming Language :: Python :: 2
+Topic :: Multimedia
+Topic :: Multimedia :: Sound/Audio
+Topic :: Multimedia :: Sound/Audio :: Analysis
+Topic :: Multimedia :: Sound/Audio :: Sound Synthesis
+Topic :: Multimedia :: Sound/Audio :: Speech
 Topic :: Scientific/Engineering
 Topic :: Software Development :: Libraries :: Python Modules
 """
