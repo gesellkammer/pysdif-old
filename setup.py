@@ -117,7 +117,7 @@ print "pysdif version = ", PYSDIF_VERSION
 
 SDIF_MAJ_VERSION = 1
 
-url      = ''
+url      = 'git://github.com/gesellkammer/pysdif.git'
 download = ''
 
 descr    = __doc__.split('\n')[1:-1]; del descr[1:3]

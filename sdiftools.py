@@ -1,3 +1,12 @@
+"""
+This utilities are not real part of pysdif and
+do not add any capability to the library
+They are mainly shortcuts and routines to deal 
+with day-to-day work with sdifs. As such they are
+likely to change and no real effort is made to maintain
+any sort of backwards compatibility here.
+"""
+
 from pysdif import *
 import os
 
@@ -197,9 +206,3 @@ def read_f0(sdiffile):
         times.append(frame.time)
         freqs.append(frame.get_matrix_data()[0, 0]) # only one row and one column per frame
     return times, freqs
-    
-def read_f0_as_bpf(sdiffile):
-    import bpf2
-    times, freqs = read_f0(sdiffile)
-    return bpf2.BpfLinear(times, freqs)
-        
