@@ -206,3 +206,24 @@ def read_f0(sdiffile):
         times.append(frame.time)
         freqs.append(frame.get_matrix_data()[0, 0]) # only one row and one column per frame
     return times, freqs
+
+def chordseq_to_1TRC(sdiffile, outfile=None):
+    sdiffile = as_sdiffile(sdiffile)
+    if outfile is None:
+        outfile = os.path.splitext(sdiffile.name)[0] + '-1TRC.sdif'
+    s = SdifFile(outfile, 'w', '1TRC')
+    for frame in sdiffile:
+        for matrix in frame:
+            if matrix.signature == '1BEG':
+                t0 = frame.time
+            elif matrix.signature == '1END':
+                t1 = frame.time
+                s.new_frame_one_matrix('1TRC', t0, '1TRC', data)
+                s.new_frame_one_matrix('1TRC', t1, '1TRC', data)
+            elif matrix.signature == '1TRC':
+                data = matrix.get_data().copy()
+    s.close()
+
+
+
+

@@ -1194,7 +1194,7 @@ cdef class SdifFile:
             <SdifDataTypeET>(dtype_numpy2sdif(data_array.descr.type_num)),
             data_array.shape[0], data_array.shape[1] # rows, cols
         )
-        SdifFSetCurrFrameHeader(self.this, frame_sig, frame_size, 1, streamID, time)
+        SdifFSetCurrFrameHeader(self.this, _str2sig(frame_sig), frame_size, 1, streamID, time)
         SdifFWriteFrameHeader(self.this)
         SdifFWriteMatrix(self.this, 
             _str2sig(matrix_sig), 
