@@ -89,6 +89,9 @@ for in_frame in in_sdif:
         new_frame.add_matrix('1ABC', in_data)
         new_frame.write()
 
+there are also many utility functions under pysdif.sdiftools
+
+see release notes and changes at http://github.com/gesellkammer/pysdif
 """
 
 import os
@@ -117,7 +120,7 @@ print "pysdif version = ", PYSDIF_VERSION
 
 SDIF_MAJ_VERSION = 1
 
-url      = 'git://github.com/gesellkammer/pysdif.git'
+url      = 'http://github.com/gesellkammer/pysdif'
 download = ''
 
 descr    = __doc__.split('\n')[1:-1]; del descr[1:3]
