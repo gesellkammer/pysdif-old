@@ -12,6 +12,7 @@ import os
 
 def as_sdiffile(s):
     if isinstance(s, SdifFile):
+        s.seek(0)
         return s
     return SdifFile(s)
 
@@ -224,6 +225,76 @@ def chordseq_to_1TRC(sdiffile, outfile=None):
                 data = matrix.get_data().copy()
     s.close()
 
+def check_matrix_exists(sdiffile, frame_sig, matrix_sig):
+    sdiffile = SdifFile(sdiffile)
+    for frame in sdiffile:
+        if frame.signature == frame_sig:
+            for matrix in frame:
+                if matrix.signature == matrix_sig:
+                    return True
+    return False        
 
+class Marker:
+    def __init__(self, marker_type, begin, end, values):
+        self.marker_type = marker_type
+        self.begin = begin
+        self.end = end
+        self.values = values
+    def __repr__(self):
+        return "%s <%f, %f> | values: %f %f" % (self.marker_type, self.begin, self.end, self.values[0], self.values[1])
+    def __iter__(self):
+        return iter(self.begin, self.end)
+    def __getitem__(self, i):
+        return (self.begin, self.end)[i]    
 
+class TransientMarker(Marker):
+    def __init__(self, begin, end, values):
+        Marker.__init__(self, 'transient', begin, end, values)
+        
+class SpectralDiffMarker(Marker):
+    def __init__(self, time, values):
+        Marker.__init__(self, 'spectral', time, time, values)
 
+def read_transient_markers(sdiffile):
+    if not check_matrix_exists(sdiffile, '1MRK', 'XTRD'):
+        raise ValueError("no transient values found in this file")
+    markers = []
+    for frame in SdifFile(sdiffile):
+        if frame.signature == '1MRK':
+            for matrix in frame:
+                if matrix.signature == '1BEG':
+                    t0 = frame.time
+                    index0 = matrix.get_data()[0]
+                elif matrix.signature == 'XTRD':
+                    values = matrix.get_data()[0].copy()
+                elif matrix.signature == '1END':
+                    index1 = matrix.get_data()[0, 0]
+                    assert index1 == index0
+                    markers.append(TransientMarker(t0, frame.time, values))
+    return markers
+    
+def read_markers(sdiffile):
+    if not (check_matrix_exists(sdiffile, '1MRK', 'XTRD') or check_matrix_exists(sdiffile, '1MRK', 'XASD')):
+        raise ValueError("no markers found in this file")
+    markers = []
+    for frame in SdifFile(sdiffile):
+        if frame.signature == '1MRK':
+            for matrix in frame:
+                if matrix.signature == '1BEG':
+                    t0 = frame.time
+                    index0 = matrix.get_data()[0]
+                elif matrix.signature == 'XTRD':
+                    values = matrix.get_data()[0].copy()
+                elif matrix.signature == '1END':
+                    index1 = matrix.get_data()[0, 0]
+                    assert index1 == index0
+                    markers.append(TransientMarker(t0, frame.time, values))
+                elif matrix.signature == 'XASD':
+                    markers.append( SpectralDiffMarker(frame.time, matrix.get_data()[0].copy()) )
+    return markers
+                    
+"""
+def read_markers(sdiffile):
+    markers = []
+    for frame in as_sdiffile(sdiffile):
+"""

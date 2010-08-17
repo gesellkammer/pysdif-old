@@ -991,6 +991,9 @@ cdef class SdifFile:
         """
         SdifFRewind(self.this)
         self.reinit()
+        
+    def _rewind(self):
+        SdifFRewind(self.this)
 
     cdef void reinit(self):
         self.frame = None
