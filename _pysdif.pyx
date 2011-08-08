@@ -1,7 +1,7 @@
 #cython: embedsignature=True
 
-from stdio cimport *
-from stdlib cimport *
+from libc.stdio cimport *
+from libc.stdlib cimport *
 
 cdef extern from "string.h":
     ctypedef void* const_void_ptr "const void *"
@@ -12,7 +12,7 @@ import os.path
 import numpy
 cimport numpy as c_numpy
 from numpy cimport ndarray, npy_intp
-from python_string cimport PyString_FromStringAndSize
+from cpython cimport PyString_FromStringAndSize
 
 cdef extern from "numpy/arrayobject.h":
     PyArray_SimpleNew(int nd, npy_intp *dims, int type_num)
@@ -133,7 +133,7 @@ cdef inline PyString_from_SdifString(SdifStringT *s):
     """ convert a SdifStringT to a python string """
     return PyString_FromStringAndSize(s.str, s.SizeW)
     
-cdef inline SdifStringT *SdifString_from_PyString(str s):
+cdef inline SdifStringT *SdifString_from_PyString(bytes s):
     cdef char *bytes = s
     cdef SdifStringT *sdifstr = SdifStringNew()
     SdifStringAppend(sdifstr, bytes)
@@ -457,17 +457,20 @@ cdef class Matrix:
             else:
                 return self._signature
                 
-    def get_data(self):
+    def get_data(self, copy=True):
         """
         read the data from the matrix as a numpy array
-        NB: the data is not copied to the array, the array
-        is only a 'view' of this data and does not own it,
+        
+        NB: if copy is False, the data is not copied to the array, 
+        the array is only a 'view' of this data and does not own it,
         so it is only valid until you read a new matrix. 
         If you want to keep the data, do 
         data = matrix.get_data().copy()
         """
         if self.source.matrix_status == eMatrixHeaderRead:
             self.source.read_matrix_data()
+        if copy:
+            return _array_from_matrix_data_copy(self.source_this.CurrMtrxData)
         return _array_from_matrix_data_no_copy(self.source_this.CurrMtrxData)
     def copy(self):
         """
@@ -558,7 +561,7 @@ cdef class FrameR:
         self.source.matrix_idx += 1
         self.source.matrix_status = eMatrixHeaderRead
         return self.source.matrix
-    def get_matrix_data(self):
+    def get_matrix_data(self, copy=True):
         """
         optimized method for frames which only have one matrix.
         
@@ -573,6 +576,8 @@ cdef class FrameR:
         self.source.matrix_idx = 1
         self.source.matrix_status = eMatrixDataRead
         self.source.frame_status = eFrameAllDataRead
+        if copy:
+            return _array_from_matrix_data_copy(self.source_this.CurrMtrxData)
         return _array_from_matrix_data_no_copy(self.source_this.CurrMtrxData) 
         
 cdef class FrameW:
@@ -817,9 +822,9 @@ cdef class SdifFile:
         def __get__(self): return self.this.CurrFramH.NumID
     property pos:
         def __get__(self): 
-            cdef SdiffPosT pos
-            SdifFGetPos(self.this, &pos)
-            return pos
+            cdef SdiffPosT _pos
+            SdifFGetPos(self.this, &_pos)
+            return _pos
         def __set__(self, long pos): SdifFSetPos(self.this, &pos)
     property frame_numerical_signature:
         def __get__(self): return self.this.CurrFramH.Signature
@@ -1180,7 +1185,7 @@ cdef class SdifFile:
             self.write_all_ascii_chunks()
         return FrameW_new(self, str2signature(signature), time, streamID)
         
-    def new_frame_one_matrix(self, str frame_sig, SdifFloat8 time, str matrix_sig, c_numpy.ndarray data_array, SdifUInt4 streamID=0):
+    def new_frame_one_matrix(self, bytes frame_sig, SdifFloat8 time, bytes matrix_sig, c_numpy.ndarray data_array, SdifUInt4 streamID=0):
         """
         create a frame containing only one matrix and write it
         This method creates the frame, creates a new matrix
