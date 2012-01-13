@@ -544,6 +544,8 @@ cdef class FrameR:
         cdef SdifSignature sig = as_signature(signature)
         # TODO 
     def __iter__(self):
+        if self.source.frame_status >= eFrameSomeDataRead:
+            raise RuntimeError("A Frame can only be iterated once")
         self.source.frame_status = eFrameSomeDataRead
         return self
     def __next__(self):
