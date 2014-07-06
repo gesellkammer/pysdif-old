@@ -5,6 +5,8 @@ SDIF for python
 
 This is a wrapper to IRCAM's SDIF C library, written mostly in Cython.
 
+Needs Cython >= 0.15
+
 It allows to read and write any kind of SDIF file, to define new
 kinds of frames and matrices and to read and write metadata. 
 
@@ -34,10 +36,17 @@ while not sdif_file.eof:
         for n in range(sdif_file.matrices_in_frame):
             sdif_file.read_matrix_header()
             if sdif_file.matrix_numerical_signature == sig1TRC:
-                data = sdif_file.get_matrix_data() 
-                # data is now a numpy array but you must copy the data if 
-                # you intend to keep it after you have read the matrix.
-                # One you read a new matrix, this data will be no longer valid
+                data = sdif_file.get_matrix_data(copy=True) # default is True 
+                # data is now a numpy array
+                # here is what happens under the hood: the SDIF library
+                # reads a whole matrix and puts it in its internal buffer
+                # This data is memcpy(ed) to create a numpy array
+                # If you dont intend to keep this data and there are no
+                # chances that a new matrix or frame will be read before 
+                # you use this data for some calculation, then it is safe
+                # to call sdif_file.get_matrix_data(copy=False)
+                # in this case no memory is copied, the numpy array does not
+                # own its memory and uses the internal buffer of the SDIF runtime
                 print data
     
 a more natural way:
@@ -49,7 +58,7 @@ for frame in sdif_file:
         print frame.time
         for matrix in frame:
             if matrix.signature == "1TRC":
-                print matrix.get_data()
+                print matrix.get_data() # data will be copied, use .get_data(copy=False) to avoid this
                 
 the frames and the matrices resulting from the iteration
 are only guaranteed to be valid as long as no new frames and matrices are read
@@ -83,11 +92,19 @@ out_sdif.clone_definitions(in_sdif)
 for in_frame in in_sdif:
     if in_frame.signature == "1NEW":
         new_frame = out_sdif.new_frame("1NEW", in_frame.time)
-        in_data = in_frame.get_matrix_data() # we know there is only one matrix
-        # multiply the second column by 0.5
+        # we know there is only one matrix and we dont need to keep the data
+        in_data = in_frame.get_matrix_data(copy=False) 
+        # multiply it
         in_data[:,1] *= 0.5
+        # add it to the stream
         new_frame.add_matrix('1ABC', in_data)
+        # only one matrix, so write the frame.
         new_frame.write()
+        # along this operation, only the memory used to allocate the original 
+        # matrix was used, the rest of the operations is performed in place
+        # This is only safe where only one thread has access to 
+        # the sdif entity at once and data is not kept longer than the time
+        # read it, transform it and rewrite it. 
 
 there are also many utility functions under pysdif.sdiftools
 
@@ -126,7 +143,6 @@ download = ''
 descr    = __doc__.split('\n')[1:-1]; del descr[1:3]
 
 classifiers = """
-Development Status :: 2 - Pre-Alpha
 Intended Audience :: Science/Research
 License :: OSI Approved :: BSD License
 Operating System :: MacOS
